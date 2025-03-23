@@ -2,7 +2,7 @@
 
 This script provides basic conversion between Adobe Audition Session (.sesx) files and Reaper Project (.rpp) files.
 
-## Supported features⏎
+## Supported features
 Track:
 - Name
 - Colour
