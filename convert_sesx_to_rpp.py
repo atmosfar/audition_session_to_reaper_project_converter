@@ -132,7 +132,6 @@ def get_source_format(file_extension):
 def get_track_audio_param(audio_params, param_name):
     # Initialize default value
     param_value = audio_params.get(param_name, 0)
-    print(f"{param_name}: {param_value}")
     if param_value != 0:
         if param_value == "true":
             param_value = 1 
