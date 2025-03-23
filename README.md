@@ -6,6 +6,7 @@ This script provides basic conversion between Adobe Audition Session (.sesx) fil
 - Track name
 - Track colour
 - Track mute, volume, pan
+- Track solo, record arming, monitoring
 - Clip position and length
 - Clip crossfading
 - Clip mute, volume, pan
