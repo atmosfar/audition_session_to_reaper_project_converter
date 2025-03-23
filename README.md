@@ -8,6 +8,7 @@ Tracks:
 - Colour
 - Mute / Volume / Pan
 - Solo / Record / Monitor
+
 Clip:
 - Position and length
 - Crossfading
