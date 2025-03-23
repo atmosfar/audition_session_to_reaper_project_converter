@@ -2,6 +2,9 @@
 
 This script provides basic conversion between Adobe Audition Session (.sesx) files and Reaper Project (.rpp) files.
 
+![Audition Session]("imgs/audition.png")
+![Reaper Project]("imgs/reaper.png")
+
 ## Supported features
 Track:
 - Name
