@@ -3,6 +3,13 @@ import sys
 import os
 import colorsys
 import rpp
+import uuid
+
+xmpNS = {
+    'xmpDM': 'http://ns.adobe.com/xmp/1.0/DynamicMedia/',
+    'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+    'xmp': 'http://ns.adobe.com/xap/1.0/'
+}
 
 def convert_sesx_to_rpp(sesx_file):
     # Parse the SESX file
@@ -15,6 +22,17 @@ def convert_sesx_to_rpp(sesx_file):
     # Get the sample rate from the session properties
     session = root.find('.//session')
     sample_rate = int(session.get('sampleRate', 48000))  # Default to 48000 if not found
+
+    # Get markers and regions
+    xmp_text = root.findtext('.//xmpMetadata')
+    xmp_clean = xmp_text.split('<?xpacket end="w"?>', 1)[0]
+    xmp_root = ET.fromstring(xmp_clean)
+    sesx_markers = parse_markers(xmp_root, sample_rate)  # Returns list of (start, end, name, guid)
+    sesx_regions = parse_regions(xmp_root, sample_rate)
+    rpp_markers = convert_markers(sesx_markers)
+    rpp_regions = convert_regions(sesx_regions)
+    root_elem.extend(rpp_markers)
+    root_elem.extend(rpp_regions)
 
     # Find the tracks in the SESX file
     tracks = root.find('.//tracks')
@@ -261,6 +279,85 @@ def create_volenv(keyframes, env_type='VOLENV'):
             '0', '0', '0'
         ])
     return vol_env
+
+def parse_regions(xmp_root, sample_rate):
+    regions = []
+    for track in xmp_root.findall('.//xmpDM:Tracks/rdf:Bag/rdf:li', xmpNS):
+        if track.findtext('xmpDM:trackName', '', xmpNS) == 'CuePoint Markers':
+            for marker in track.findall('xmpDM:markers/rdf:Seq/rdf:li', xmpNS):
+                if marker.findtext('xmpDM:duration', '0', xmpNS) != '0':
+                    regions.append((
+                        int(marker.findtext('xmpDM:startTime', '0', xmpNS)) / sample_rate,
+                        (int(marker.findtext('xmpDM:startTime', '0', xmpNS)) + 
+                         int(marker.findtext('xmpDM:duration', '0', xmpNS))) / sample_rate,
+                        marker.findtext('xmpDM:name', '', xmpNS),
+                        marker.findtext('xmpDM:guid', '', xmpNS)
+                    ))
+    return regions
+
+def parse_markers(xmp_root, sample_rate):
+    markers = []
+    for track in xmp_root.findall('.//xmpDM:Tracks/rdf:Bag/rdf:li', xmpNS):
+        if track.findtext('xmpDM:trackName', '', xmpNS) == 'CuePoint Markers':
+            for marker in track.findall('xmpDM:markers/rdf:Seq/rdf:li', xmpNS):
+                if marker.findtext('xmpDM:duration', '0', xmpNS) == '0':
+                    markers.append((
+                        int(marker.findtext('xmpDM:startTime', '0', xmpNS)) / sample_rate,
+                        marker.findtext('xmpDM:name', '', xmpNS),
+                        marker.findtext('xmpDM:guid', '', xmpNS)
+                    ))
+    return markers
+
+def convert_markers(markers):
+    converted_markers = []
+    marker_id = 1
+    for start, name, guid in markers:
+        # Region start marker
+        marker_elem = [
+            "MARKER",
+            str(marker_id),
+            f"{start:.6f}",
+            name,
+            '0',  # Flags: 0=basic marker
+            '0',
+            '1',  # Always shown
+            'B',
+            guid or f"{{{uuid.uuid4()}}}",
+            '0'
+        ]
+        converted_markers.append(marker_elem)
+    return converted_markers
+
+def convert_regions(regions):
+    converted_regions = []
+    region_id = 1
+    for start, end, name, guid in regions:
+        # Region start marker
+        start_elem = [
+            'MARKER',
+            str(region_id),
+            f"{start:.6f}",
+            name,
+            '1',  # Flags: 1=region marker
+            '0',
+            '1',  # Always shown
+            'B',
+            guid or f"{{{uuid.uuid4()}}}",
+            '0'
+        ]
+        converted_regions.append(start_elem)
+        
+        # Region end marker (same ID, empty name)
+        end_elem = [
+            'MARKER',
+            str(region_id),
+            f"{end:.6f}",
+            '""',
+            '1'
+        ]
+        converted_regions.append(end_elem)
+        region_id += 1  # Increment ID for next region/marker
+    return converted_regions
 
 def main():
     if len(sys.argv) != 2:

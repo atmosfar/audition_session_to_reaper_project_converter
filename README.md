@@ -5,6 +5,9 @@ This script provides basic conversion between Adobe Audition Session (.sesx) fil
 ![File comparison](imgs/comparison.png)
 
 ## Supported features
+Project:
+- Markers / Regions
+
 Track:
 - Name
 - Colour
