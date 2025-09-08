@@ -25,22 +25,27 @@ def convert_sesx_to_rpp(sesx_file):
 
     # Get markers and regions
     xmp_text = root.findtext('.//xmpMetadata')
-    xmp_clean = xmp_text.split('<?xpacket end="w"?>', 1)[0]
-    xmp_root = ET.fromstring(xmp_clean)
-    sesx_markers = parse_markers(xmp_root, sample_rate)  # Returns list of (start, end, name, guid)
-    sesx_regions = parse_regions(xmp_root, sample_rate)
+    if xmp_text is None:
+        sesx_markers = []
+        sesx_regions = []
+    else:
+        xmp_clean = xmp_text.split('<?xpacket end="w"?>', 1)[0]
+        xmp_root = ET.fromstring(xmp_clean)
+        sesx_markers = parse_markers(xmp_root, sample_rate)
+        sesx_regions = parse_regions(xmp_root, sample_rate)
+    
     rpp_markers = convert_markers(sesx_markers)
     rpp_regions = convert_regions(sesx_regions)
     root_elem.extend(rpp_markers)
     root_elem.extend(rpp_regions)
-
+    
     # Find the tracks in the SESX file
     tracks = root.find('.//tracks')
     if tracks is not None:
         for audio_track in tracks.findall('audioTrack'):
             track_name = audio_track.find('trackParameters/name').text
 
-            track_hue = int(audio_track.find('trackParameters').get('trackHue', 0))
+            track_hue = float(audio_track.find('trackParameters').get('trackHue', 0))
             track_colour = hue_to_peakcol(track_hue)
 
             volume, pan, mute = get_volume_mute_pan(audio_track)
