@@ -1,6 +1,8 @@
+
+
 # Audition session to Reaper project converter
 
-This script provides basic conversion between Adobe Audition Session (.sesx) files and Reaper Project (.rpp) files. It was written for use with Python 3.13.
+This script provides basic conversion from Adobe Audition Session (.sesx) files to Reaper Project (.rpp) files. It was written for use with Python 3.13.
 
 ![File comparison](imgs/comparison.png)
 
